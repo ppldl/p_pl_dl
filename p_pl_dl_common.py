@@ -44,7 +44,7 @@ def parseCookies(sDirectory):
     """
     Scans a directory for cookie text files.
 
-    The text file must begin with:
+    The cookie file must begin with:
 
         # Netscape HTTP Cookie File
 
