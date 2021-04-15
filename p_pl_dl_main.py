@@ -6,6 +6,7 @@ from time import sleep
 import p_pl_dl_common as dl_common
 import p_pl_dl_pt as dl_pt
 import p_pl_dl_xh as dl_xh
+import p_pl_dl_xv as dl_xv
 
 
 def main(argv):
@@ -44,6 +45,7 @@ def main(argv):
 
     dExtractors = {'porntrex': dl_pt,
                    'xhamster': dl_xh,
+                   'xvideos' : dl_xv,
                    }
 
     # Get each URL into a dict
