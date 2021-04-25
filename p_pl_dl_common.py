@@ -74,6 +74,9 @@ class Page:
 
 
     def _extract_video_urls(self, sFilter=None):
+        """
+        Extract video URLs from a single playlist page.
+        """
         for a in self.soup.find_all('a', href=True):
             href = a['href']
             if 'http' not in href:
@@ -82,3 +85,11 @@ class Page:
                 continue
             if href not in self.videos:
                 self.videos.append(a['href'])
+
+
+    def _html_to_text(self, sFileName=None):
+        if sFileName is None:
+            sFileName = "html_content.txt"
+        text_file = open(sFileName, "w", encoding='utf-8')
+        text_file.write(self.content.text)
+        text_file.close()

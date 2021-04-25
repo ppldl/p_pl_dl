@@ -5,13 +5,9 @@ A porn playlist downloader using `youtube-dl` and `beautifulsoup`.
 Currently supports:
 
 - porntrex
+- spankbang
 - xhamster
 - xvideos
-
-Future updates will add support for:
-- pornhub
-- spankbang
-- youporn
 
 ***
 ***
@@ -41,7 +37,7 @@ python p_pl_dl_main.py.py -i "C:\MyFolder\TextFileWithUrls.txt" -c "C:\MyFolder\
 
 #### Input TXT w/ URLs
 
-The URL text file should have URLs separated by a line break.
+The URL text file should have URLs separated by a line break. The URLs may be for individual videos or entire playlists.
 
 Example:
 
