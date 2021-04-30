@@ -87,7 +87,7 @@ class Page_Spankbang(dl_common.Page):
             else:
                 sUrlType = 'playlist'
         else:
-            raise ValueError(f"Unable to determine {sExtractor} URL type for {sUrl}! Please submit a bug report!")
+            raise ValueError(f"Unable to determine {sExtractor} URL type for {self.url}! Please submit a bug report!")
         return sUrlType
 
 
@@ -103,7 +103,7 @@ class Page_Spankbang(dl_common.Page):
             lPageVideos = self._extract_page_urls(nPage)
             if lPageVideos:
                 lUrlVideos += lPageVideos
-                print(f"Found {len(lPageVideos)} videos on {nPage:02}...")
+                print(f"Found {len(lPageVideos)} videos on page {nPage:02}...")
             else:
                 print(f"No videos found on page {nPage}. Stopping...")
                 break
