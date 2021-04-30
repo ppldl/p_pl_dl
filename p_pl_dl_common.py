@@ -62,6 +62,7 @@ def parseCookies(sDirectory):
             else:
                 print(f"Skipping {sTxt}...")
         sleep(0.250)
+    sleep(1)
 
 
 class Page:

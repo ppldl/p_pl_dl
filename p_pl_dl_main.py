@@ -62,10 +62,12 @@ def main(argv):
                     dSites[sSite] = True
                     dUrlDefs[sUrl] = sSite
     print()
+    sleep(1)
 
     print("Detected websites:")
     print(json.dumps(dSites, indent=4))
     print()
+    sleep(1)
 
     for sUrl, sSite in dUrlDefs.items():
         if sSite in dExtractors.keys():
@@ -78,6 +80,7 @@ def main(argv):
                 continue
         else:
             print(f"No extractor available for {sSite} - {sUrl}")
+            sleep(1)
         print()
 
 
