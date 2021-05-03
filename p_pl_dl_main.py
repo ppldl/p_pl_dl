@@ -8,6 +8,7 @@ import p_pl_dl_pt as dl_pt
 import p_pl_dl_sb as dl_sb
 import p_pl_dl_xh as dl_xh
 import p_pl_dl_xv as dl_xv
+import p_im_dl_lt as dl_lt
 
 
 def main(argv):
@@ -36,15 +37,17 @@ def main(argv):
     print()
     sleep(0.5)
 
-    dSites = {'pornhub'  : False,
-              'porntrex' : False,
-              'spankbang': False,
-              'xhamster' : False,
-              'xvideos'  : False,
-              'youporn'  : False,
+    dSites = {'lewdthots'   : False,
+              'pornhub'     : False,
+              'porntrex'    : False,
+              'spankbang'   : False,
+              'xhamster'    : False,
+              'xvideos'     : False,
+              'youporn'     : False,
               }
 
-    dExtractors = {'porntrex'   : dl_pt,
+    dExtractors = {'lewdthots'  : dl_lt,
+                   'porntrex'   : dl_pt,
                    'spankbang'  : dl_sb,
                    'xhamster'   : dl_xh,
                    'xvideos'    : dl_xv,
@@ -67,7 +70,7 @@ def main(argv):
     print("Detected websites:")
     print(json.dumps(dSites, indent=4))
     print()
-    sleep(1)
+    sleep(2)
 
     for sUrl, sSite in dUrlDefs.items():
         if sSite in dExtractors.keys():
@@ -80,7 +83,7 @@ def main(argv):
                 continue
         else:
             print(f"No extractor available for {sSite} - {sUrl}")
-            sleep(1)
+            sleep(2)
         print()
 
 

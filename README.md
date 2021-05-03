@@ -4,6 +4,7 @@ A porn playlist downloader using `youtube-dl` and `beautifulsoup`.
 
 Currently supports:
 
+- lewdthots (albums only)
 - porntrex
 - spankbang
 - xhamster
