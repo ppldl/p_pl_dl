@@ -1,6 +1,7 @@
 import os
 import argparse
 import json
+import traceback
 from time import sleep
 
 import p_pl_dl_common as dl_common
@@ -76,9 +77,9 @@ def main(argv):
         if sSite in dExtractors.keys():
             try:
                 dExtractors[sSite].run(sUrl, sCookieSource=None)        # Cookies should already be parsed and available when going through main
-            except Exception as e:
+            except:
                 print("\r\n\r\n")
-                print(e)
+                traceback.print_exc()
                 print("\r\n\r\n")
                 continue
         else:

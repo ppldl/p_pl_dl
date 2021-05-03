@@ -8,6 +8,8 @@ sTestUrl = r"https://lewdthots.com/meg-turney-lord-raiden-topless-onlyfans-set-l
 
 
 def run(sUrl, *args, **kwargs):
+    print(f"Running {sExtractor} extractor for {sUrl}\r\n")
+
     html = dl_common.session.get(sUrl, headers=dl_common.dHeaders)
 
     soup = dl_common.BeautifulSoup(html.text, 'html.parser')
