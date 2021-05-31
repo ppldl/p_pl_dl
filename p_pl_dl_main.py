@@ -5,6 +5,7 @@ import traceback
 from time import sleep
 
 import p_pl_dl_common as dl_common
+import p_pl_dl_ph as dl_ph
 import p_pl_dl_pt as dl_pt
 import p_pl_dl_sb as dl_sb
 import p_pl_dl_xh as dl_xh
@@ -48,6 +49,7 @@ def main(argv):
               }
 
     dExtractors = {'lewdthots'  : dl_lt,
+                   'pornhub'    : dl_ph,
                    'porntrex'   : dl_pt,
                    'spankbang'  : dl_sb,
                    'xhamster'   : dl_xh,
