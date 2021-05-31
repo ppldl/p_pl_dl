@@ -1,10 +1,11 @@
 # p_pl_dl - Porn Playlist Downloader
 
-A porn playlist downloader using `youtube-dl` and `beautifulsoup`.
+A porn playlist downloader using `youtube-dl` and `beautifulsoup`, along with some limited support for image albums.
 
 Currently supports:
 
 - lewdthots (albums only)
+- pornhub
 - porntrex
 - spankbang
 - xhamster
