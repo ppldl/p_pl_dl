@@ -27,6 +27,8 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
         sUrlType = 'video'
     elif 'porntrex.com/my' in sUrl:
         sUrlType = 'playlist'
+    elif 'porntrex.com/search' in sUrl:
+        sUrlType = 'playlist'               # Search results can be treated as a playlist
     else:
         raise ValueError(f"Unable to determine {sExtractor} URL type for {sUrl}! Please submit a bug report!")
 
@@ -48,12 +50,19 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
     lUrlVideos = []
     if sUrlType == 'playlist':
         print("Playlist detected. Getting videos...")
-        sUrlBaseFormat = urlAjaxFormatGet(sUrl)
+        sUrlBaseFormat = urlBaseFormatGet(sUrl)
         nPage = 0
+
         while True:
             nPage += 1
             print(f"Attempting page {nPage:02}")
-            sUrlPage = sUrlBaseFormat.format(f'{nPage:02}')
+            if 'search' in sUrl:
+                if nPage == 1:
+                    sUrlPage = sUrlBaseFormat.format('')
+                else:
+                    sUrlPage = sUrlBaseFormat.format(f'{nPage}/')
+            else:
+                sUrlPage = sUrlBaseFormat.format(f'{nPage:02}')
             page = dl_common.Page(sUrlPage)
             nPageStatus = page.content.status_code
             if nPageStatus != 200:
@@ -72,6 +81,8 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
         # Remove non-video URLs that may have been picked up
         lTemp = []
         for sUrl in lUrlVideos:
+            if sUrl == 'https://www.porntrex.com/my/favourites/videos/':
+                continue
             if 'video' in sUrl:
                 lTemp += [sUrl]
         lUrlVideos = lTemp
@@ -93,6 +104,8 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
             print(f"Processing video {nIdx + 1} of {nNumVideos}...")
             print()
 
+        if bDebug:
+            print(f"Processing {sVideoUrl}")
         video = Video(sVideoUrl)
         dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\{video.sFullName}'
 
@@ -105,22 +118,30 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
         print()
 
 
-def urlAjaxFormatGet(sUrl):
+def urlBaseFormatGet(sUrl):
     """
-    Sort out which AJAX URL format to use.
+    Create the base f-string URL that be used to iteratively go through pages.
+
+    Playlists and favorites use an AJAX format. They do not have simple page numbers.
+    Search results use simple page numbers.
     """
-    sUrlAjaxBase = None
+    sUrlBase = None
     if 'playlists' in sUrl:
         print("Using 'playlists' format...")
         nType = 10
         nPlaylistId = sUrl.split('/')[-2]
-        sUrlAjaxBase = f'https://www.porntrex.com/my/playlists/{nPlaylistId}/?mode=async&function=get_block&block_id=list_videos_my_favourite_videos&fav_type={nType}&playlist_id={nPlaylistId}&sort_by=&from_my_fav_videos={{}}'
+        sUrlBase = f'https://www.porntrex.com/my/playlists/{nPlaylistId}/?mode=async&function=get_block&block_id=list_videos_my_favourite_videos&fav_type={nType}&playlist_id={nPlaylistId}&sort_by=&from_my_fav_videos={{}}'
     elif 'favourites' in sUrl:
         print("Using 'favourites' format...")
         nType = 0
         nPlaylistId = 0
-        sUrlAjaxBase = f'https://www.porntrex.com/my/favourites/videos/?mode=async&function=get_block&block_id=list_videos_my_favourite_videos&fav_type={nType}&playlist_id={nPlaylistId}&sort_by=&from_my_fav_videos={{}}'
-    return sUrlAjaxBase
+        sUrlBase = f'https://www.porntrex.com/my/favourites/videos/?mode=async&function=get_block&block_id=list_videos_my_favourite_videos&fav_type={nType}&playlist_id={nPlaylistId}&sort_by=&from_my_fav_videos={{}}'
+    elif 'search' in sUrl:
+        if not sUrl.endswith('/'):
+            sUrl += '/'
+        sUrl += '{}'
+        sUrlBase = sUrl
+    return sUrlBase
 
 
 class Video(dl_common.Page):
