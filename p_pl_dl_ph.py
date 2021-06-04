@@ -35,6 +35,14 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
     dYdlOptions = dict(dl_common.dYdlOptions)
     dYdlOptions['download_archive'] = rf".\\sites\\{sExtractor}\\{dYdlOptions['download_archive'].format(sExtractor)}"
 
+    # Set options helpful for pornhub
+    dYdlOptions['retries']                      = 10
+    dYdlOptions['fragment_retries']             = 10
+    dYdlOptions['keep_fragments']               = True
+    dYdlOptions['skip_unavailable_fragments']   = False
+    dYdlOptions['external_downloader_args']     = ["-m3u8_hold_counters", "3",
+                                                   "-max_reload", "3"]
+
     for nIdx, sVideoUrl in enumerate(page.videos):
         if page.sUrlType == 'playlist':
             print(f"Processing playlist video {nIdx + 1} of {page._nVideos} :: {sVideoUrl}")
