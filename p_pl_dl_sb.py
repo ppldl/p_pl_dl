@@ -1,7 +1,10 @@
 from time import sleep
 import youtube_dl
+import random
 
 import p_pl_dl_common as dl_common
+
+DEBUG = False
 
 sExtractor = 'spankbang'
 
@@ -15,7 +18,11 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
     if dl_common.dCookiesParsed is None:
         print("WARNING :: No cookies were provided! Private videos/playlists will fail to download!\r\n")
 
+    # 20210619 :: Workaround for https://github.com/ppldl/p_pl_dl/issues/1
+    dl_common.addCipher("https://spankbang.com")
+
     # Attempt initial connection
+    dl_common.randomizeHeader()
     html = dl_common.session.get(sUrl, headers=dl_common.dHeaders, cookies=dl_common.dCookiesParsed)
     print(f"Initial connection status: {html.status_code}")
     if html.status_code == 403:
@@ -23,6 +30,7 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
     elif html.status_code != 200:
         raise ConnectionError(f"Initial connection failed : Status {html.status_code}")
     print()
+    sleepRandom(1, 3)
 
     if bDebug:
         # Save HTML content to a text file for debug
@@ -31,9 +39,12 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
         text_file.close()
 
     page = Page_Spankbang(sUrl)
+    sleepRandom(3, 5)
 
     dYdlOptions = dict(dl_common.dYdlOptions)
     dYdlOptions['download_archive'] = rf".\\sites\\{sExtractor}\\{dYdlOptions['download_archive'].format(sExtractor)}"
+    # dYdlOptions['referer']          = 'https://spankbang.com'
+    # dYdlOptions['user_agent']       = dl_common.dHeaders['User-Agent']        # Not needed - YTDL already has a UA randomizer
 
     for nIdx, sVideoUrl in enumerate(page.videos):
         if page.sUrlType == 'playlist':
@@ -43,12 +54,14 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
         dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\%(title)s.%(ext)s'
 
         with youtube_dl.YoutubeDL(dYdlOptions) as ydl:
+            ydl.cache.remove()
             ydl.download([sVideoUrl])
 
         if nVideoLimit is not None and (nIdx + 1) >= nVideoLimit:
             print(f"Hit the specified maximum limit of {nVideoLimit}. Stopping...")
             break
         print()
+        sleepRandom()
 
 
 class Page_Spankbang(dl_common.Page):
@@ -114,17 +127,25 @@ class Page_Spankbang(dl_common.Page):
         """
         Extract video URLs from a single page of the playlist.
         """
+        dl_common.randomizeHeader()
         for nAttempts in range(3):
             sUrlPage = self._sUrlBaseFormat.format(nPage)
-            content = dl_common.session.get(sUrlPage, cookies=dl_common.dCookiesParsed)
+            content = dl_common.session.get(sUrlPage, headers=dl_common.dHeaders, cookies=dl_common.dCookiesParsed)
             if "503 Service Temporarily Unavailable" in content.text:
-                sleep(3)
+                if DEBUG:
+                    print("503 encountered! Sleeping...")
+                sleepRandom()
                 continue
             soup = dl_common.BeautifulSoup(content.text, 'html.parser')
+            sleepRandom(1, 3)
+            break
 
         lVideos = []
+        lProcessed = []
         for a in soup.find_all('a', href=True):
             href = a['href']
+            if href in lProcessed:
+                continue
             if 'playlist' not in href:
                 continue
             if '/lang/' in href:
@@ -134,9 +155,10 @@ class Page_Spankbang(dl_common.Page):
             if sFilter is not None and sFilter not in href:
                 continue
             if href not in self.videos:
-                sUnmaskedUrl = self._unmask_video_url(a['href'])
+                sUnmaskedUrl = self._unmask_video_url(href)
                 if sUnmaskedUrl is not None and sUnmaskedUrl not in lVideos:
                     lVideos.append(sUnmaskedUrl)
+                lProcessed += [href]
         return lVideos
 
 
@@ -145,10 +167,12 @@ class Page_Spankbang(dl_common.Page):
         Unmask playlist videos.
         """
         sUrlFull = rf"https://spankbang.com{sUrlMasked}"
+        if DEBUG:
+            print(sUrlFull)
 
-        # Load up the page using the masked URL, then search its content for the real URL
+        # Load up the page using the masked URL from the playlist, then search its content for the real URL
         for nAttempt in range(nAttempts):
-            content = dl_common.session.get(sUrlFull, cookies=dl_common.dCookiesParsed)
+            content = dl_common.session.get(sUrlFull, headers=dl_common.dHeaders, cookies=dl_common.dCookiesParsed)
             soup = dl_common.BeautifulSoup(content.text, 'html.parser')
 
             try:
@@ -159,10 +183,11 @@ class Page_Spankbang(dl_common.Page):
             if sCanonicalUrl is not None:
                 break
             else:
-                sleep(1)
+                sleepRandom(3, 5)
 
         if sCanonicalUrl is None:
             print(f"Failed to unmask a URL for {sUrlMasked}")
+        sleepRandom(1, 3)
         return sCanonicalUrl
 
 
@@ -174,3 +199,13 @@ def urlStandardize(sUrl):
         sUrl += '/'
     sUrl += '{}'
     return sUrl
+
+
+def sleepRandom(nMin=5, nMax=10):
+    """
+    Sleep for some random interval to help avoid tripping Cloudflare's anti-bot protection.
+    """
+    nSleep = round(random.uniform(min(nMin, nMax), max(nMin, nMax)), 2)
+    if DEBUG:
+        print(nSleep)
+    sleep(nSleep)

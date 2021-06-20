@@ -1,9 +1,13 @@
 import glob
 import re
 import requests
+import youtube_dl.utils as ytdl_utils
 from bs4 import BeautifulSoup
 from time import sleep
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.ssl_ import create_urllib3_context
 
+CIPHERS = 'DEFAULT:@SECLEVEL=2'
 
 dYdlOptions = {'continuedl'         : True,
                'nooverwrites'       : True,
@@ -20,6 +24,14 @@ dHeaders = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Ge
 
 session = requests.Session()
 dCookiesParsed = {}
+
+
+def randomizeHeader():
+    dHeaders['User-Agent'] = randomizeUserAgent()
+
+
+def randomizeUserAgent():
+    return ytdl_utils.random_user_agent()
 
 
 def parseCookieFile(sCookiesTxt):
@@ -65,11 +77,15 @@ def parseCookies(sDirectory):
     sleep(1)
 
 
+def addCipher(sPrefix):
+    session.mount(sPrefix, CipherAdapter())
+
+
 class Page:
 
     def __init__(self, url):
         self.url = url
-        self.content = session.get(url, cookies=dCookiesParsed)
+        self.content = session.get(url, headers=dHeaders, cookies=dCookiesParsed)
         self.soup = BeautifulSoup(self.content.text, 'html.parser')
         self.videos = []
 
@@ -94,3 +110,17 @@ class Page:
         text_file = open(sFileName, "w", encoding='utf-8')
         text_file.write(self.content.text)
         text_file.close()
+
+
+class CipherAdapter(HTTPAdapter):
+    # Sourced from https://stackoverflow.com/questions/64967706/python-requests-https-code-403-without-but-code-200-when-using-burpsuite
+
+    def init_poolmanager(self, *args, **kwargs):
+        context = create_urllib3_context(ciphers=CIPHERS)
+        kwargs['ssl_context'] = context
+        return super(CipherAdapter, self).init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, *args, **kwargs):
+        context = create_urllib3_context(ciphers=CIPHERS)
+        kwargs['ssl_context'] = context
+        return super(CipherAdapter, self).proxy_manager_for(*args, **kwargs)
