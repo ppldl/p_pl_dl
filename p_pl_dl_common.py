@@ -81,6 +81,10 @@ def addCipher(sPrefix):
     session.mount(sPrefix, CipherAdapter())
 
 
+def runYtdl():
+    pass
+
+
 class Page:
 
     def __init__(self, url):

@@ -1,4 +1,5 @@
 from time import sleep
+from time import time
 import youtube_dl
 
 import p_pl_dl_common as dl_common
@@ -36,28 +37,49 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
     dYdlOptions['download_archive'] = rf".\\sites\\{sExtractor}\\{dYdlOptions['download_archive'].format(sExtractor)}"
 
     # Set options helpful for pornhub
-    dYdlOptions['retries']                      = 10
-    dYdlOptions['fragment_retries']             = 10
-    dYdlOptions['keep_fragments']               = True
-    dYdlOptions['skip_unavailable_fragments']   = False
-    dYdlOptions['external_downloader_args']     = ["-m3u8_hold_counters", "3",
-                                                   "-max_reload", "3"]
+    # dYdlOptions['retries']                      = 10
+    # dYdlOptions['fragment_retries']             = 10
+    # dYdlOptions['keep_fragments']               = True
+    # dYdlOptions['skip_unavailable_fragments']   = False
+    # dYdlOptions['external_downloader_args']     = ["-m3u8_hold_counters", "3", "-max_reload", "3"]
 
-    for nIdx, sVideoUrl in enumerate(page.videos):
-        if page.sUrlType == 'playlist':
-            print(f"Processing playlist video {nIdx + 1} of {page._nVideos} :: {sVideoUrl}")
+    lFailedUrls = []
+
+    def ytdlLoop(lUrls, bLogFailures):
+        nonlocal lFailedUrls
+
+        for nIdx, sVideoUrl in enumerate(lUrls):
+            print(f"Processing video {nIdx + 1} of {len(lUrls)} :: {sVideoUrl}")
             print()
 
-        sVideoId = sVideoUrl.split('view_video.php?viewkey=')[-1]
-        dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\{sVideoId}_%(title)s.mp4'
+            sVideoId = sVideoUrl.split('view_video.php?viewkey=')[-1]
+            dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\{sVideoId}_%(title)s.mp4'
 
-        with youtube_dl.YoutubeDL(dYdlOptions) as ydl:
-            ydl.download([sVideoUrl])
+            nStart = time()
+            try:
+                with youtube_dl.YoutubeDL(dYdlOptions) as ydl:
+                    ydl.download([sVideoUrl])
+            except:
+                if bLogFailures:
+                    print(f"\r\nEncountered some error for URL = {sVideoUrl}")
+                    print(f"Adding it to the retry list...")
+                    lFailedUrls += [sVideoUrl]
+                continue
+            nStop = time()
+            print(f"\r\nElapsed time for URL = {sVideoUrl}: {round((nStop - nStart) / 60, 2)} minutes\r\n")
 
-        if nVideoLimit is not None and (nIdx + 1) >= nVideoLimit:
-            print(f"Hit the specified maximum limit of {nVideoLimit}. Stopping...")
-            break
+            if nVideoLimit is not None and (nIdx + 1) >= nVideoLimit:
+                print(f"Hit the specified maximum limit of {nVideoLimit}. Stopping...")
+                break
         print()
+
+    ytdlLoop(page.videos, bLogFailures=True)
+
+    if lFailedUrls:
+        print("Retrying URLs that failed...")
+        for sUrl in lFailedUrls:
+            print(sUrl)
+        ytdlLoop(lFailedUrls, bLogFailures=False)
 
 
 class Page_Pornhub(dl_common.Page):
@@ -131,6 +153,7 @@ class Page_Pornhub(dl_common.Page):
                 sleep(3)
                 continue
             soup = dl_common.BeautifulSoup(content.text, 'html.parser')
+            break
 
         lVideos = []
         lTags = soup.find_all(attrs={"class": 'pcVideoListItem js-pop videoblock videoBox'})
