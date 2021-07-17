@@ -68,15 +68,22 @@ def main(argv):
                     dSites[sSite] = True
                     dUrlDefs[sUrl] = sSite
     print()
-    sleep(1)
-
     print("Detected websites:")
     print(json.dumps(dSites, indent=4))
     print()
     sleep(2)
 
+    if argv.only is not None:
+        argv.only = argv.only.lower()
+        if argv.only in dSites.keys():
+            for key, value in dSites.items():
+                if argv.only == key:
+                    dSites[key] = True
+                else:
+                    dSites[key] = False
+
     for sUrl, sSite in dUrlDefs.items():
-        if sSite in dExtractors.keys():
+        if sSite in dExtractors.keys() and dSites[sSite]:
             try:
                 dExtractors[sSite].run(sUrl, sCookieSource=None)        # Cookies should already be parsed and available when going through main
             except:
@@ -95,5 +102,6 @@ if __name__ == '__main__':
     argparser.add_argument('-i', '--input',     help='Input TXT file with URLs to process', required=True)
     argparser.add_argument('-c', '--cookies',   help='Input TXT file with cookies')
     argparser.add_argument('-d', '--dest',      help='Download destination path')
+    argparser.add_argument('-o', '--only',      help='Only run a specific site')
     args = argparser.parse_args()
     main(args)
