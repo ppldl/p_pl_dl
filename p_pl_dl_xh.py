@@ -4,6 +4,20 @@ import p_pl_dl_common as dl_common
 
 sExtractor = 'xhamster'
 
+# Something changed with xhamster where these headers are now required
+dHeaders_xh = {'Host': 'xhamster.com',
+               'User-Agent': dl_common.randomizeUserAgent(),
+               'DNT': '1',
+               'Connection': 'keep-alive',
+               'Sec-Fetch-Dest': 'document',
+               'Sec-Fetch-Mode': 'navigate',
+               'Sec-Fetch-Site': 'none',
+               'Sec-Fetch-User': '?1',
+               'Cache-Control': 'max-age=0',
+               'Cookie': dl_common.cookieHeaderStringGet(),
+               'TE': 'trailers'
+               }
+
 
 def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
     print(f"Running {sExtractor} extractor for {sUrl}\r\n")
@@ -45,7 +59,7 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
             nPage += 1
             print(f"Attempting page {nPage:02}")
             sUrlPage = sUrlBaseFormat.format(f'{nPage:02}')
-            page = dl_common.Page(sUrlPage)
+            page = dl_common.Page(sUrlPage, headers=dHeaders_xh)
             nPageStatus = page.content.status_code
             if nPageStatus != 200:
                 if nPageStatus == 403:

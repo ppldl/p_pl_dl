@@ -20,7 +20,7 @@ dYdlOptions = {'continuedl'         : True,
                'outtmpl'            : None,
                }
 
-dHeaders = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0"}
+dHeaders = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0"}
 
 session = requests.Session()
 dCookiesParsed = {}
@@ -42,8 +42,14 @@ def parseCookieFile(sCookiesTxt):
     dCookies = {}
     with open(sCookiesTxt, 'r') as fp:
         for line in fp:
-            if '#' in line or 'href' in line or len(line) == 1:
+            # Need to keep "HTML Only" items for xhamster cookies
+            if "#HttpOnly_xhamster.com" in line:
+                line = line.replace("#HttpOnly_xhamster.com", ".xhamster.com")
+            elif '#HttpOnly_.xhamster.com' in line:
+                line = line.replace("#HttpOnly_.xhamster.com", ".xhamster.com")
+            elif '#' in line or 'href' in line or len(line) == 1:
                 continue
+
             if not re.match(r'^\#', line):
                 lineFields = line.strip().split('\t')
                 dCookies[lineFields[5]] = lineFields[6]
@@ -77,6 +83,19 @@ def parseCookies(sDirectory):
     sleep(1)
 
 
+def cookieHeaderStringGet(dCookies=None):
+    if dCookies is None:
+        dCookies = dCookiesParsed
+
+    cookieString = ''
+    for key, value in dCookies.items():
+        if cookieString != '':
+            cookieString += '; '
+        cookieString += f"{key}={value}"
+
+    return cookieString
+
+
 def addCipher(sPrefix):
     session.mount(sPrefix, CipherAdapter())
 
@@ -87,9 +106,12 @@ def runYtdl():
 
 class Page:
 
-    def __init__(self, url):
+    def __init__(self, url, headers=None):
+        if headers is None:
+            headers = dHeaders
+
         self.url = url
-        self.content = session.get(url, headers=dHeaders, cookies=dCookiesParsed)
+        self.content = session.get(url, headers=headers, cookies=dCookiesParsed)
         self.soup = BeautifulSoup(self.content.text, 'html.parser')
         self.videos = []
 
