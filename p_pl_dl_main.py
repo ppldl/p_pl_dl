@@ -93,7 +93,7 @@ def main(argv):
                 continue
         else:
             print(f"No extractor available for {sSite} - {sUrl}")
-            sleep(2)
+            sleep(0.5)
         print()
 
 
