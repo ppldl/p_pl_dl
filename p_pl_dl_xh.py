@@ -5,18 +5,20 @@ import p_pl_dl_common as dl_common
 sExtractor = 'xhamster'
 
 # Something changed with xhamster where these headers are now required
-dHeaders_xh = {'Host': 'xhamster.com',
-               'User-Agent': dl_common.randomizeUserAgent(),
-               'DNT': '1',
-               'Connection': 'keep-alive',
-               'Sec-Fetch-Dest': 'document',
-               'Sec-Fetch-Mode': 'navigate',
-               'Sec-Fetch-Site': 'none',
-               'Sec-Fetch-User': '?1',
-               'Cache-Control': 'max-age=0',
-               'Cookie': dl_common.cookieHeaderStringGet(),
-               'TE': 'trailers'
-               }
+def _xhamsterHeaderGet():
+    dHeaders_xh = {'Host': 'xhamster.com',
+                   'User-Agent': dl_common.randomizeUserAgent(),
+                   'DNT': '1',
+                   'Connection': 'keep-alive',
+                   'Sec-Fetch-Dest': 'document',
+                   'Sec-Fetch-Mode': 'navigate',
+                   'Sec-Fetch-Site': 'none',
+                   'Sec-Fetch-User': '?1',
+                   'Cache-Control': 'max-age=0',
+                   'Cookie': dl_common.cookieHeaderStringGet(),
+                   'TE': 'trailers'
+                   }
+    return dHeaders_xh
 
 
 def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
@@ -34,6 +36,8 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
         sUrlType = 'playlist'
     else:
         raise ValueError(f"Unable to determine {sExtractor} URL type for {sUrl}! Please submit a bug report!")
+
+    dXhamsterHeader = _xhamsterHeaderGet()
 
     # Attempt initial connection
     html = dl_common.session.get(sUrl, headers=dl_common.dHeaders, cookies=dl_common.dCookiesParsed)
@@ -59,7 +63,7 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
             nPage += 1
             print(f"Attempting page {nPage:02}")
             sUrlPage = sUrlBaseFormat.format(f'{nPage:02}')
-            page = dl_common.Page(sUrlPage, headers=dHeaders_xh)
+            page = dl_common.Page(sUrlPage, headers=dXhamsterHeader)
             nPageStatus = page.content.status_code
             if nPageStatus != 200:
                 if nPageStatus == 403:
@@ -68,6 +72,10 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
                     print(f"Page {nPage} returned 404!")
                     print(f"Assuming page {nPage - 1} was the last page of the playlist")
                     break
+
+            if "<title>Page not found</title>" in page.content.text:
+                break
+
             page._extract_video_urls()
             if page.videos:
                 lUrlVideos += page.videos
