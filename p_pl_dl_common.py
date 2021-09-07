@@ -18,6 +18,8 @@ dYdlOptions = {'continuedl'         : True,
                'nopostoverwrites'   : True,
                'download_archive'   : 'dl_hist_{}.txt',
                'outtmpl'            : None,
+               'retries'            : 3,
+               'fragment_retries'   : 3
                }
 
 dHeaders = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0"}
