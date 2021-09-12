@@ -26,13 +26,20 @@ Videos from each site will be downloaded to `\sites\<site name>` within the curr
 
 Using a single cookie text file:
 ```
-python p_pl_dl_main.py.py -i "C:\MyFolder\TextFileWithUrls.txt" -c "C:\MyFolder\FolderWithCookieTxts\cookies.txt" -d "F:\WorkingDir"
+python p_pl_dl_main.py.py -i "C:\MyFolder\urls.txt" -c "C:\MyCookieFolder\cookies.txt" -d "F:\DownloadDestination"
 ```
 
 Using multiple cookie text files stored in a folder:
 
 ```
-python p_pl_dl_main.py.py -i "C:\MyFolder\TextFileWithUrls.txt" -c "C:\MyFolder\FolderWithCookieTxts" -d "F:\WorkingDir"
+python p_pl_dl_main.py.py -i "C:\MyFolder\urls.txt" -c "C:\MyCookieFolder\" -d "F:\DownloadDestination"
+```
+
+You may also restrict downloads to a specific site using `-o`. This may be useful if your `urls.txt` has lots of playlists/videos across many sites, but you need to scrape a specific one. Pass in the full name of the site as given in the list of supported sites above.
+
+```
+python p_pl_dl_main.py.py -i "C:\MyFolder\urls.txt" -c "C:\MyCookieFolder\" -d "F:\DownloadDestination" -o "xhamster"
+python p_pl_dl_main.py.py -i "C:\MyFolder\urls.txt" -c "C:\MyCookieFolder\" -d "F:\DownloadDestination" -o "spankbang"
 ```
 
 ***
