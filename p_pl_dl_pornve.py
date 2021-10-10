@@ -7,7 +7,8 @@ import p_pl_dl_common as dl_common
 
 DEBUG = False
 
-sExtractor = 'pornve'
+sExtractor  = 'pornve'
+sArchive    = rf".\\sites\\{sExtractor}\\dl_hist_{sExtractor}.txt"
 
 
 def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
@@ -40,24 +41,53 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
     sleepRandom(3, 5)
 
     dYdlOptions = dict(dl_common.dYdlOptions)
-    dYdlOptions['download_archive'] = rf".\\sites\\{sExtractor}\\{dYdlOptions['download_archive'].format(sExtractor)}"
+    dYdlOptions['download_archive'] = None
 
     for nIdx, sVideoUrl in enumerate(page.videos):
         if page.sUrlType == 'playlist':
             print(f"Processing playlist video {nIdx + 1} of {page._nVideos} :: {sVideoUrl}")
             print()
 
-        dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\%(title)s.%(ext)s'
+        # Get the actual video stream info for a video link from a playlist
+        if page.sUrlType == 'playlist':
+            pageVideo = Page_Pornve(sVideoUrl)
+            sVideoName = pageVideo._sVideoName
+            sVideoStreamUrl = pageVideo.videos[0]
+            sPageUrl = pageVideo.url
+        else:
+            sVideoName = page._sVideoName
+            sVideoStreamUrl = page.videos[0]
+            sPageUrl = page.url
 
-        with youtube_dl.YoutubeDL(dYdlOptions) as ydl:
-            ydl.cache.remove()
-            ydl.download([sVideoUrl])
+        bRun = True
+        try:
+            with open(sArchive) as archive:
+                if sPageUrl in archive.read():
+                    print(f"Archive already has an entry for {sPageUrl}")
+                    print("Skipping...")
+                    bRun = False
+        except:
+            pass
+
+        if bRun:
+            dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\{sVideoName}.%(ext)s'
+
+            with youtube_dl.YoutubeDL(dYdlOptions) as ydl:
+                ydl.cache.remove()
+                ret = ydl.download([sVideoStreamUrl])
+
+            # Need to do our own archiving since YTDL will treat everything with the name "index-v1-a1" because
+            # of how the video is extracted in _extract_video_stream
+            # YTDL ret 0 is good, 1 is bad
+            if not ret:
+                with open(sArchive, 'a') as archive:
+                    archive.write(sPageUrl + "\r\n")
 
         if nVideoLimit is not None and (nIdx + 1) >= nVideoLimit:
             print(f"Hit the specified maximum limit of {nVideoLimit}. Stopping...")
             break
         print()
-        sleepRandom()
+        sleepRandom(3, 5)
 
 
 class Page_Pornve(dl_common.Page):
@@ -71,17 +101,24 @@ class Page_Pornve(dl_common.Page):
                 raise ConnectionError(f"403 Forbidden! Please check if cookies are required! Private videos/playlists cannot be accessed without cookies!")
 
         self.sUrlType = self._get_url_type()
-        self._sUrlBaseFormat = urlStandardize(self.url)
 
         if self.sUrlType == 'video':
             sVideoStreamUrl = self._extract_video_stream()
             self.videos.append(sVideoStreamUrl)
+
+            sVideoNameComponents = self.url.split('.html')[0].split('/')[-2:]
+            self._sVideoName = '_'.join(reversed(sVideoNameComponents))
+
             self._nVideos = 1
         elif self.sUrlType == 'playlist':
             print("Playlist detected. Getting videos...")
+
+            lUrlComponents = self.url.split('/')
+            self._playlistId = lUrlComponents[-2] if not lUrlComponents[-1] else lUrlComponents[-1]
+
             self._extract_video_urls()
             self._nVideos = len(self.videos)
-            print(f"Found {self._nVideos} video URLs in the playlist")
+            print(f"Found {self._nVideos} video URLs in the playlist\r\n")
 
 
     def _get_url_type(self):
@@ -92,26 +129,12 @@ class Page_Pornve(dl_common.Page):
         return sUrlType
 
 
-    def _extract_video_stream(self):
-        for nAttempts in range(3):
-            content = dl_common.session.get(self.url, headers=dl_common.dHeaders, cookies=dl_common.dCookiesParsed)
-            if "503 Service Temporarily Unavailable" in content.text:
-                if DEBUG:
-                    print("503 encountered! Sleeping...")
-                sleepRandom()
-                continue
-            sleepRandom(1, 3)
-            break
-
-        sVideoStreamId = re.search("\|master\|urlset\|(.*?\|hls\|src\|)", content.text).group(0).split('|')[3]
-
-        return f"https://ve14.pornve.com/hls/{sVideoStreamId}/index-v1-a1.m3u8"
-
-
     def _extract_video_urls(self, sFilter=None):
         """
         Extract video URLs from all playlist pages.
         """
+        self._sUrlBaseFormat = f"https://pornve.com/?hide_search=1&op=search&playlist={self._playlistId}&sort_field=file_created&sort_order=down&page={{}}"
+
         lUrlVideos = []
         nPage = 0
         while True:
@@ -150,49 +173,47 @@ class Page_Pornve(dl_common.Page):
             href = a['href']
             if href in lProcessed:
                 continue
-            if 'playlist' not in href:
-                continue
-            if '/lang/' in href:
-                continue
-            if f'{self._playlistId}-' not in href:
+            if f'?list={self._playlistId}' not in href:
                 continue
             if sFilter is not None and sFilter not in href:
                 continue
             if href not in self.videos:
-                sUnmaskedUrl = self._unmask_video_url(href)
-                if sUnmaskedUrl is not None and sUnmaskedUrl not in lVideos:
-                    lVideos.append(sUnmaskedUrl)
+                sCleanedUrl = self._clean_video_url(href)
+                if sCleanedUrl is not None and sCleanedUrl not in lVideos:
+                    lVideos.append(sCleanedUrl)
                 lProcessed += [href]
         return lVideos
 
 
-    def _unmask_video_url(self, sUrlMasked, nAttempts=3):
+    def _extract_video_stream(self):
+        for nAttempts in range(3):
+            content = dl_common.session.get(self.url, headers=dl_common.dHeaders, cookies=dl_common.dCookiesParsed)
+            if "503 Service Temporarily Unavailable" in content.text:
+                if DEBUG:
+                    print("503 encountered! Sleeping...")
+                sleepRandom()
+                continue
+            sleepRandom(1, 3)
+            break
+
+        lReVideoStream = re.search("\|master\|urlset\|(.*?\|hls\|src\|)", content.text).group(0).split('|')
+        if len(lReVideoStream) == 7:
+            sVideoStreamId = lReVideoStream[3]
+            sVideoStreamUrl = f"https://ve14.pornve.com/hls/{sVideoStreamId}/index-v1-a1.m3u8"
+        elif len(lReVideoStream) == 9:
+            sVideoStreamId = ','.join(reversed(lReVideoStream[3:6]))
+            sVideoStreamUrl = f"https://ve11.pornve.com/hls/{sVideoStreamId},.urlset/master.m3u8"
+        else:
+            raise ValueError(f"Not sure how to process this: {lReVideoStream}")
+
+        return sVideoStreamUrl
+
+
+    def _clean_video_url(self, sUrlMasked, nAttempts=3):
         """
         Unmask playlist videos.
         """
-        sUrlFull = rf"https://spankbang.com{sUrlMasked}"
-        if DEBUG:
-            print(sUrlFull)
-
-        # Load up the page using the masked URL from the playlist, then search its content for the real URL
-        for nAttempt in range(nAttempts):
-            content = dl_common.session.get(sUrlFull, headers=dl_common.dHeaders, cookies=dl_common.dCookiesParsed)
-            soup = dl_common.BeautifulSoup(content.text, 'html.parser')
-
-            try:
-                sCanonicalUrl = soup.find(attrs={'rel': 'canonical'}).attrs['href']
-            except:
-                sCanonicalUrl = None
-
-            if sCanonicalUrl is not None:
-                break
-            else:
-                sleepRandom(3, 5)
-
-        if sCanonicalUrl is None:
-            print(f"Failed to unmask a URL for {sUrlMasked}")
-        sleepRandom(1, 3)
-        return sCanonicalUrl
+        return sUrlMasked.split("?list=")[0]
 
 
 def urlStandardize(sUrl):
@@ -205,11 +226,12 @@ def urlStandardize(sUrl):
     return sUrl
 
 
-def sleepRandom(nMin=5, nMax=10):
+def sleepRandom(nMin=5, nMax=10, bSim=False):
     """
     Sleep for some random interval to help avoid tripping Cloudflare's anti-bot protection.
     """
     nSleep = round(random.uniform(min(nMin, nMax), max(nMin, nMax)), 2)
-    if DEBUG:
+    if DEBUG or bSim:
         print(nSleep)
-    sleep(nSleep)
+    if not bSim:
+        sleep(nSleep)
