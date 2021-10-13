@@ -1,7 +1,8 @@
 from time import sleep
-import youtube_dl
+import jsbeautifier
 import random
 import re
+import youtube_dl
 
 import p_pl_dl_common as dl_common
 
@@ -196,15 +197,8 @@ class Page_Pornve(dl_common.Page):
             sleepRandom(1, 3)
             break
 
-        lReVideoStream = re.search("\|master\|urlset\|(.*?\|hls\|src\|)", content.text).group(0).split('|')
-        if len(lReVideoStream) == 7:
-            sVideoStreamId = lReVideoStream[3]
-            sVideoStreamUrl = f"https://ve14.pornve.com/hls/{sVideoStreamId}/index-v1-a1.m3u8"
-        elif len(lReVideoStream) == 9:
-            sVideoStreamId = ','.join(reversed(lReVideoStream[3:6]))
-            sVideoStreamUrl = f"https://ve11.pornve.com/hls/{sVideoStreamId},.urlset/master.m3u8"
-        else:
-            raise ValueError(f"Not sure how to process this: {lReVideoStream}")
+        sPackedCode = self._js_find_packed_code(content.text)
+        sVideoStreamUrl = self._js_unpack_and_get_stream(sPackedCode)
 
         return sVideoStreamUrl
 
@@ -214,6 +208,42 @@ class Page_Pornve(dl_common.Page):
         Unmask playlist videos.
         """
         return sUrlMasked.split("?list=")[0]
+
+
+    def _js_find_packed_code(self, htmlContent):
+        lHtmlLines = htmlContent.split("\r\n")
+        sPackedCode = None
+        for row in lHtmlLines:
+            if r"""eval(function(p,a,c,k,e,d)""" in row:
+                sPackedCode = row
+        if sPackedCode is None:
+            raise ValueError("Did not find any packed JS code...")
+
+        nIdxStart = len(sPackedCode) - len(sPackedCode.lstrip())
+        sPackedCode = sPackedCode[nIdxStart:]
+
+        if sPackedCode[-1:] == '\n':
+            sPackedCode = sPackedCode[:-1]
+
+        return sPackedCode
+
+
+    def _js_unpack_and_get_stream(self, packedData):
+        """
+        Pass in obfuscated "eval(function(p,a,c,k,e,d)..." string
+        """
+        url = None
+        unpacked_data = jsbeautifier.beautify(packedData).split('"')
+        for sData in unpacked_data:
+            if ".m3u8" in sData:
+                url = sData
+        if url is None:
+            raise ValueError("Could not find a video stream URL!")
+
+        # unpacked_data_split = unpacked_data.split('><source src=')
+        # url = unpacked_data_split[1].split(""" type="application/x-mpegURL">""")[0].replace('"', "")
+
+        return url
 
 
 def urlStandardize(sUrl):
