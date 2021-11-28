@@ -137,7 +137,7 @@ class Page_Spankbang(dl_common.Page):
                 sleepRandom()
                 continue
             soup = dl_common.BeautifulSoup(content.text, 'html.parser')
-            sleepRandom(1, 3)
+            sleepRandom(3, 10)
             break
 
         lVideos = []
