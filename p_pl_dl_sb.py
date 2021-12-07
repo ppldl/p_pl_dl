@@ -51,7 +51,7 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
             print(f"Processing playlist video {nIdx + 1} of {page._nVideos} :: {sVideoUrl}")
             print()
 
-        dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\%(title)s.%(ext)s'
+        dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\%(title).125s.%(ext)s'
 
         with youtube_dl.YoutubeDL(dYdlOptions) as ydl:
             ydl.cache.remove()
