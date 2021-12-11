@@ -23,25 +23,44 @@ def run(sUrl, *args, **kwargs):
         lImageUrls += [sImageUrl]
     print(f"Found {len(lImageUrls)} images")
 
-    # Create subdirectory for the album - there has to be a better (more Pythonic) way
+    sArchive = rf".\\sites\\{sExtractor}\\dl_hist_{sExtractor}.txt"
+
+    # Parse out album name, then check whether this album has already been downloaded
     sAlbumName = sUrl.split("/")[-2] if sUrl[-1] == '/' else sUrl.split("/")[-1]
     sAlbumName.replace("-", "_")
-    lPathComponents = ['sites', sExtractor, sAlbumName]
-    sPath = ''
-    for idx, sPathComponent in enumerate(lPathComponents):
-        sPath += sPathComponent
-        try:
-            os.mkdir(sPath)
-        except Exception:
-            pass
-        sPath += '/'
 
-    nImageNum = 1
-    for sImageUrl in lImageUrls:
-        sImageName = sImageUrl.split('/')[-1]
-        print(f"Processing image {nImageNum:>03} : {sImageName}")
-        nFileName = f"{nImageNum:>03}_{sImageName}"
-        with open(os.path.join('sites', sExtractor, sAlbumName, nFileName), 'wb') as handler:
-            response = dl_common.requests.get(sImageUrl, stream=True)
-            handler.write(response.content)
-        nImageNum += 1
+    bRun = True
+    try:
+        with open(sArchive) as archive:
+            if sAlbumName in archive.read():
+                print(f"Archive already has an entry for {sAlbumName}")
+                print("Skipping...")
+                bRun = False
+    except:
+        pass
+
+    if bRun:
+        # Create subdirectory for the album - there has to be a better (more Pythonic) way...
+        lPathComponents = ['sites', sExtractor, sAlbumName]
+        sPath = ''
+        for idx, sPathComponent in enumerate(lPathComponents):
+            sPath += sPathComponent
+            try:
+                os.mkdir(sPath)
+            except Exception:
+                pass
+            sPath += '/'
+
+        nImageNum = 1
+        for sImageUrl in lImageUrls:
+            sImageName = sImageUrl.split('/')[-1]
+            print(f"Processing image {nImageNum:>03} : {sImageName}")
+            nFileName = f"{nImageNum:>03}_{sImageName}"
+            with open(os.path.join('sites', sExtractor, sAlbumName, nFileName), 'wb') as handler:
+                response = dl_common.requests.get(sImageUrl, stream=True)
+                handler.write(response.content)
+            nImageNum += 1
+
+        with open(sArchive, 'a') as archive:
+            archive.write(sAlbumName + "\r\n")
+
