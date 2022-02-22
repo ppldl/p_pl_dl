@@ -137,7 +137,7 @@ class Page_Spankbang(dl_common.Page):
                 sleepRandom()
                 continue
             soup = dl_common.BeautifulSoup(content.text, 'html.parser')
-            sleepRandom(3, 10)
+            sleepRandom(3, 5)
             break
 
         lVideos = []
@@ -183,11 +183,11 @@ class Page_Spankbang(dl_common.Page):
             if sCanonicalUrl is not None:
                 break
             else:
-                sleepRandom(3, 5)
+                sleepRandom(1, 5)
 
         if sCanonicalUrl is None:
             print(f"Failed to unmask a URL for {sUrlMasked}")
-        sleepRandom(1, 3)
+        # sleepRandom(1, 3)
         return sCanonicalUrl
 
 
