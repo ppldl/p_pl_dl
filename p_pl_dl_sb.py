@@ -1,4 +1,5 @@
 from time import sleep
+from time import time
 import yt_dlp as youtube_dl
 import random
 
@@ -46,13 +47,25 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
     # dYdlOptions['referer']          = 'https://spankbang.com'
     # dYdlOptions['user_agent']       = dl_common.dHeaders['User-Agent']        # Not needed - YTDL already has a UA randomizer
 
+    # Store info on videos that have already been downloaded
+    sArchive = rf".\\sites\\{sExtractor}\\dl_hist_{sExtractor}.txt"
+    with open(sArchive) as file:
+        lines = file.readlines()
+        lVidHistory = [line.rstrip().split(' ')[1] for line in lines]
+    print(lVidHistory)
+
     for nIdx, sVideoUrl in enumerate(page.videos):
         if page.sUrlType == 'playlist':
             print(f"Processing playlist video {nIdx + 1} of {page._nVideos} :: {sVideoUrl}")
             print()
 
-        dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\%(title).125s.%(ext)s'
+        sVidId = sVideoUrl.split('/')[3]
+        print(sVidId)
+        if sVidId in lVidHistory:
+            print(f"{sVidId} has already been downloaded. Moving on...")
+            continue
 
+        dYdlOptions['outtmpl'] = rf'.\\sites\\{sExtractor}\\%(title).125s.%(ext)s'
         with youtube_dl.YoutubeDL(dYdlOptions) as ydl:
             ydl.cache.remove()
             ydl.download([sVideoUrl])
@@ -110,6 +123,7 @@ class Page_Spankbang(dl_common.Page):
         """
         lUrlVideos = []
         nPage = 0
+        timeStart = time()
         while True:
             nPage += 1
 
@@ -120,6 +134,9 @@ class Page_Spankbang(dl_common.Page):
             else:
                 print(f"No videos found on page {nPage}. Stopping...")
                 break
+        timeStop = time()
+        timeElapsed = round((timeStop - timeStart) / 60, 1)
+        print(f"Time elapsed: {timeElapsed} minutes")
         self.videos += lUrlVideos
 
 
