@@ -20,7 +20,11 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
         print("WARNING :: No cookies were provided! Private videos/playlists will fail to download!\r\n")
 
     # 20210619 :: Workaround for https://github.com/ppldl/p_pl_dl/issues/1
-    dl_common.addCipher("https://spankbang.com")
+    # 20220710 :: Wrapping this in lazy try-except since I'm not sure this is needed anymore since I use ytdlp instead of ytdl
+    try:
+        dl_common.addCipher("https://spankbang.com")
+    except:
+        pass
 
     # Attempt initial connection
     dl_common.randomizeHeader()
