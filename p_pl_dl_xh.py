@@ -6,17 +6,17 @@ sExtractor = 'xhamster'
 
 # Something changed with xhamster where these headers are now required
 def _xhamsterHeaderGet():
-    dHeaders_xh = {'Host': 'xhamster.com',
-                   'User-Agent': dl_common.randomizeUserAgent(),
-                   'DNT': '1',
-                   'Connection': 'keep-alive',
-                   'Sec-Fetch-Dest': 'document',
-                   'Sec-Fetch-Mode': 'navigate',
-                   'Sec-Fetch-Site': 'none',
-                   'Sec-Fetch-User': '?1',
-                   'Cache-Control': 'max-age=0',
-                   'Cookie': dl_common.cookieHeaderStringGet(),
-                   'TE': 'trailers'
+    dHeaders_xh = {'Host'           : 'xhamster.com',
+                   'User-Agent'     : dl_common.randomizeUserAgent(),
+                   'DNT'            : '1',
+                   'Connection'     : 'keep-alive',
+                   'Sec-Fetch-Dest' : 'document',
+                   'Sec-Fetch-Mode' : 'navigate',
+                   'Sec-Fetch-Site' : 'none',
+                   'Sec-Fetch-User' : '?1',
+                   'Cache-Control'  : 'max-age=0',
+                   'Cookie'         : dl_common.cookieHeaderStringGet(),
+                   'TE'             : 'trailers'
                    }
     return dHeaders_xh
 
