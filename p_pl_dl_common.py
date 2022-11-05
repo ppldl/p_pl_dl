@@ -1,7 +1,7 @@
 import glob
 import re
 import requests
-import youtube_dl.utils as ytdl_utils
+import yt_dlp.utils as ytdl_utils
 from bs4 import BeautifulSoup
 from time import sleep
 from requests.adapters import HTTPAdapter
