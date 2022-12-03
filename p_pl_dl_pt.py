@@ -1,3 +1,4 @@
+from time import time
 import yt_dlp as youtube_dl
 
 import p_pl_dl_common as dl_common
@@ -16,6 +17,8 @@ PornTrex also uses AJAX, which is a bit awkward to deal with for me.
 
 def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
     print(f"Running {sExtractor} extractor for {sUrl}\r\n")
+
+    nTimeStart = time()
 
     if sCookieSource is not None:
         dl_common.parseCookieFile(sCookieSource)
@@ -116,6 +119,9 @@ def run(sUrl, sCookieSource=None, nVideoLimit=None, bDebug=False):
             print(f"Hit the specified maximum limit of {nVideoLimit}. Stopping...")
             break
         print()
+
+    nTimeEnd = time()
+    print(f"Run time: {round((nTimeEnd - nTimeStart) / 60, 2)} minutes")
 
 
 def urlBaseFormatGet(sUrl):

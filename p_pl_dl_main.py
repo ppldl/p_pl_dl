@@ -59,6 +59,9 @@ def main(argv):
                    'xvideos'    : dl_xv,
                    }
 
+    nVideoLimit = int(argv.limit) if argv.limit is not None else None
+    print(f"Video limit per URL = {nVideoLimit}")
+
     # Get each URL into a dict
     dUrlDefs = {}
     with open(sSourceUrls) as fSourceUrls:
@@ -88,7 +91,7 @@ def main(argv):
     for sUrl, sSite in dUrlDefs.items():
         if sSite in dExtractors.keys() and dSites[sSite]:
             try:
-                dExtractors[sSite].run(sUrl, sCookieSource=None)        # Cookies should already be parsed and available when going through main
+                dExtractors[sSite].run(sUrl, sCookieSource=None, nVideoLimit=nVideoLimit)       # Cookies should already be parsed and available when going through main
             except:
                 print("\r\n\r\n")
                 traceback.print_exc()
@@ -106,5 +109,6 @@ if __name__ == '__main__':
     argparser.add_argument('-c', '--cookies',   help='Input TXT file with cookies')
     argparser.add_argument('-d', '--dest',      help='Download destination path')
     argparser.add_argument('-o', '--only',      help='Only run a specific site')
+    argparser.add_argument('-l', '--limit',     help='Limit the number of videos')
     args = argparser.parse_args()
     main(args)
