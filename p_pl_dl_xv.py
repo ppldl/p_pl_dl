@@ -114,7 +114,7 @@ class Page_Xvideos(dl_common.Page):
         Extract video URLs from a single playlist page.
         """
         sUrlPage = self._sUrlBaseFormat.format(nPage)
-        content = dl_common.session.get(sUrlPage, cookies=dl_common.dCookiesParsed)
+        content = dl_common.session.get(sUrlPage, headers=dl_common.dHeaders, cookies=dl_common.dCookiesParsed)
         soup = dl_common.BeautifulSoup(content.text, 'html.parser')
 
         lVideos = []
